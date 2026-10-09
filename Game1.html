@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Game1 Prototype V4</title>
+<title>Game1 Prototype V4.1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#fff;font-family:system-ui;touch-action:none}
 #game{position:relative;width:100vw;height:100dvh;overflow:hidden;background:linear-gradient(#23354a,#426b70 58%,#405d38 58%,#263d2b);user-select:none}
@@ -19,9 +19,9 @@
 .bossHp{position:absolute;left:50%;top:-13px;transform:translateX(-50%);font-size:10px;white-space:nowrap;color:#fff;text-shadow:0 1px 2px #000}.runner{z-index:7;width:46px;height:46px;background:#174f77;border:4px solid #62c7ff;border-radius:50%;box-shadow:0 0 0 2px #09283d}.runner:after{content:'🏃';position:absolute;font-size:25px;left:6px;top:5px}
 .heart{z-index:5;background:transparent;font-size:31px;text-align:center;line-height:42px}
 .boom{position:absolute;z-index:15;transform:translate(-50%,-50%);font-size:45px;animation:boom .42s forwards}@keyframes boom{to{transform:translate(-50%,-50%) scale(2);opacity:0}}
-#joystick{position:absolute;z-index:30;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:142px;height:142px;border-radius:50%;background:#ffffff18;border:3px solid #ffffff42;touch-action:none}
-#stick{position:absolute;left:50%;top:50%;width:58px;height:58px;border-radius:50%;background:#ffffff45;border:2px solid #ffffff75;transform:translate(-50%,-50%);pointer-events:none}
-#attackJoy{position:absolute;z-index:30;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:114px;height:114px;border-radius:50%;background:#b8322b55;border:3px solid #ffb7a888;touch-action:none}#attackStick{position:absolute;left:50%;top:50%;width:48px;height:48px;border-radius:50%;background:#d94a42;border:2px solid #ffb7a8;transform:translate(-50%,-50%);pointer-events:none}
+#joystick{position:absolute;z-index:30;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:114px;height:114px;border-radius:50%;background:#ffffff18;border:3px solid #ffffff42;touch-action:none}
+#stick{position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;background:#ffffff45;border:2px solid #ffffff75;transform:translate(-50%,-50%);pointer-events:none}
+#attackJoy{position:absolute;z-index:30;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:91px;height:91px;border-radius:50%;background:#b8322b55;border:3px solid #ffb7a888;touch-action:none}#attackStick{position:absolute;left:50%;top:50%;width:38px;height:38px;border-radius:50%;background:#d94a42;border:2px solid #ffb7a8;transform:translate(-50%,-50%);pointer-events:none}
 #gameover{display:none;position:absolute;z-index:50;inset:0;background:#000b;place-items:center;text-align:center;font-size:28px}
 #gameover button{font-size:18px;padding:10px 20px}
 </style></head><body><div id="game">
@@ -54,7 +54,7 @@ function spawnHeart(){const el=document.createElement('div');el.className='actor
 function dist(a,b,c,d){return Math.hypot(a-c,b-d)}
 function explode(x,y){const e=document.createElement('div');e.className='boom';e.textContent='💥';pos(e,x,y);game.append(e);setTimeout(()=>e.remove(),450)}
 function attack(){if(!running||attacking)return;attacking=true;const weapon=document.querySelector('#weapon'),ang=Math.atan2(faceY,faceX);weapon.style.transform='translate(8px,-50%) rotate('+ang+'rad)';weapon.classList.remove('attack');void weapon.offsetWidth;weapon.classList.add('attack');beep(420,.08,'square');
- const reach=.12;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],vx=e.x-px,vy=e.y-py,d=Math.hypot(vx,vy),dot=d?((vx/d)*faceX+(vy/d)*faceY)/Math.max(.001,Math.hypot(faceX,faceY)):1;if(d<reach&&dot>.45){if(e.type==='littleBoss1'||e.type==='runner'){e.hp--;e.hpTag.textContent=(e.type==='runner'?'Runner':'Little Boss 1')+' · HP '+e.hp;const fl=Math.max(.001,Math.hypot(faceX,faceY));e.x+=faceX/fl*.045;e.y+=faceY/fl*.045;beep(620,.07,'square');if(e.hp>0)continue}explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(700,.08,'square')}}
+ const reach=.18, hitRadius=.025;const fl=Math.max(.001,Math.hypot(faceX,faceY)),ux=faceX/fl,uy=faceY/fl;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],vx=e.x-px,vy=e.y-py,along=vx*ux+vy*uy,side=Math.abs(vx*uy-vy*ux);if(along>=0&&along<=reach*1.15&&side<=hitRadius){if(e.type==='littleBoss1'||e.type==='runner'){e.hp--;e.hpTag.textContent=(e.type==='runner'?'Runner':'Little Boss 1')+' · HP '+e.hp;e.x+=ux*.045;e.y+=uy*.045;beep(620,.07,'square');if(e.hp>0)continue}explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(700,.08,'square')}}
  setTimeout(()=>{weapon.classList.remove('attack');attacking=false},260)}
 addEventListener('keydown',e=>{if(e.key===' '||e.key==='k')attack()});
 function loop(now){if(!running)return;let dt=Math.min((now-last)/1000,.05);last=now;
