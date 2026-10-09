@@ -1,26 +1,56 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Game1 Prototype</title><style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#17212b;font-family:system-ui;color:white}
-#game{position:relative;width:100%;height:100%;touch-action:none;background:linear-gradient(#78c8e8 0 68%,#74a94b 68% 76%,#7a4e2d 76%)}
-#hero{position:absolute;left:40px;bottom:24%;width:82px;height:108px;user-select:none;touch-action:none;transform-origin:50% 85%}
-.head{position:absolute;left:23px;top:3px;width:42px;height:40px;border-radius:45%;background:#d7a16f;border:5px solid #562f25}
-.body{position:absolute;left:18px;top:42px;width:52px;height:50px;border-radius:12px;background:#9d2d2d;border:5px solid #e0ad45}
-.leg{position:absolute;top:87px;width:15px;height:20px;background:#432a25}.l{left:23px}.r{left:52px}
-.sword{position:absolute;left:66px;top:48px;width:55px;height:8px;background:#ddd;border-radius:4px;transform-origin:0 50%;transform:rotate(-18deg)}
-#hero.walking{animation:bob .16s infinite alternate} @keyframes bob{to{transform:translateY(-5px)}}
-#hero.attack .sword{animation:slash .32s ease-out} @keyframes slash{0%{transform:rotate(-65deg)}50%{transform:rotate(45deg)}100%{transform:rotate(-18deg)}}
-#hero.attack{animation:thrust .32s ease-out}@keyframes thrust{50%{transform:translateX(14px)}}
-#status{position:absolute;top:12px;left:12px;padding:8px 12px;background:#0008;border-radius:10px;font-size:14px}
-#help{position:absolute;left:12px;right:12px;bottom:12px;text-align:center;padding:10px;background:#0008;border-radius:12px;font-size:14px}
-</style></head><body><div id="game"><div id="status">狀態：待機</div>
-<div id="hero"><div class="head"></div><div class="body"></div><div class="leg l"></div><div class="leg r"></div><div class="sword"></div></div>
-<div id="help">拖曳角色＝移動　｜　點一下角色＝攻擊</div></div>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Game1 Prototype V2</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#fff;font-family:system-ui;touch-action:none}
+#game{position:relative;width:100vw;height:100dvh;overflow:hidden;background:linear-gradient(#23354a,#426b70 58%,#405d38 58%,#263d2b);user-select:none}
+#hud{position:absolute;z-index:20;top:max(10px,env(safe-area-inset-top));left:12px;background:#0009;padding:7px 12px;border-radius:9px;font-weight:700}
+#msg{position:absolute;z-index:20;top:12px;left:50%;transform:translateX(-50%);font-size:13px;color:#ddd}
+.actor{position:absolute;width:42px;height:42px;border-radius:12px;transform:translate(-50%,-50%)}
+#player{z-index:8;left:50%;top:78%;background:#b72f35;border:4px solid #e8bd58;box-shadow:0 6px 0 #692127}
+#player:before{content:"";position:absolute;width:24px;height:19px;left:5px;top:-15px;border-radius:50% 50% 35% 35%;background:#d9a071;border:3px solid #542d27}
+#player.attack{animation:attack .18s alternate 2}@keyframes attack{to{transform:translate(-50%,-50%) scale(1.35) rotate(8deg);filter:brightness(1.8)}}
+.enemy{z-index:6;background:#58225f;border:4px solid #b76ac2;border-radius:50% 50% 40% 40%}
+.enemy:after{content:"💣";position:absolute;font-size:18px;left:8px;top:7px}
+.heart{z-index:5;background:transparent;font-size:31px;text-align:center;line-height:42px}
+.boom{position:absolute;z-index:15;transform:translate(-50%,-50%);font-size:45px;animation:boom .42s forwards}@keyframes boom{to{transform:translate(-50%,-50%) scale(2);opacity:0}}
+#pad{position:absolute;z-index:30;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:142px;height:142px}
+.ctrl{position:absolute;width:48px;height:48px;border:0;border-radius:13px;background:#ffffff2b;color:#fff;font-size:25px;font-weight:bold;box-shadow:inset 0 0 0 2px #ffffff45;touch-action:none}
+#up{left:47px;top:0}#down{left:47px;bottom:0}#left{left:0;top:47px}#right{right:0;top:47px}
+#attack{position:absolute;z-index:30;right:24px;bottom:max(35px,env(safe-area-inset-bottom));width:86px;height:86px;border-radius:50%;border:4px solid #ffb7a8;background:#b8322b;color:white;font-weight:900;font-size:18px;box-shadow:0 5px 0 #651a16;touch-action:none}
+#attack:active,.ctrl:active{transform:translateY(2px);filter:brightness(1.4)}
+#gameover{display:none;position:absolute;z-index:50;inset:0;background:#000b;place-items:center;text-align:center;font-size:28px}
+#gameover button{font-size:18px;padding:10px 20px}
+</style></head><body><div id="game">
+<div id="hud">HP：<span id="hp">100</span></div><div id="msg">敵人每 5 秒出現</div>
+<div id="player" class="actor"></div>
+<div id="pad"><button id="up" class="ctrl">▲</button><button id="left" class="ctrl">◀</button><button id="right" class="ctrl">▶</button><button id="down" class="ctrl">▼</button></div>
+<button id="attack">攻擊</button>
+<div id="gameover"><div>GAME OVER<br><button onclick="location.reload()">重新開始</button></div></div>
+</div>
 <script>
-const game=document.querySelector('#game'),hero=document.querySelector('#hero'),status=document.querySelector('#status');
-let down=false,moved=false,startX=0,startY=0,offsetX=0,offsetY=0;
-hero.addEventListener('pointerdown',e=>{down=true;moved=false;startX=e.clientX;startY=e.clientY;const r=hero.getBoundingClientRect();offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;hero.setPointerCapture(e.pointerId)});
-hero.addEventListener('pointermove',e=>{if(!down)return;if(Math.hypot(e.clientX-startX,e.clientY-startY)>8)moved=true;if(!moved)return;const g=game.getBoundingClientRect(),w=hero.offsetWidth,h=hero.offsetHeight;let x=e.clientX-g.left-offsetX,y=e.clientY-g.top-offsetY;x=Math.max(0,Math.min(g.width-w,x));y=Math.max(0,Math.min(g.height-h,y));hero.style.left=x+'px';hero.style.top=y+'px';hero.style.bottom='auto';hero.classList.add('walking');status.textContent='狀態：移動'});
-hero.addEventListener('pointerup',()=>{down=false;hero.classList.remove('walking');if(!moved){hero.classList.remove('attack');void hero.offsetWidth;hero.classList.add('attack');status.textContent='狀態：攻擊';setTimeout(()=>{hero.classList.remove('attack');status.textContent='狀態：待機'},350)}else status.textContent='狀態：待機'});
-hero.addEventListener('pointercancel',()=>{down=false;hero.classList.remove('walking')});
+const game=document.querySelector('#game'),player=document.querySelector('#player'),hpEl=document.querySelector('#hp');
+let hp=100,px=.5,py=.78,last=performance.now(),enemyTimer=0,healTimer=20+Math.random()*10,running=true;
+const enemies=[],hearts=[],keys={up:0,down:0,left:0,right:0}; const SPEED=.34, ENEMY_SPEED=.105;
+function beep(freq=300,dur=.07,type='square'){try{const A=window.AudioContext||window.webkitAudioContext;window.ac??=new A();const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.05,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+dur)}catch{}}
+function bind(id,k){const b=document.querySelector('#'+id);b.onpointerdown=e=>{e.preventDefault();keys[k]=1;b.setPointerCapture(e.pointerId)};b.onpointerup=b.onpointercancel=()=>keys[k]=0}
+['up','down','left','right'].forEach(k=>bind(k,k));
+function pos(el,x,y){el.style.left=x*100+'%';el.style.top=y*100+'%'}
+function spawnEnemy(){const el=document.createElement('div');el.className='actor enemy';const e={el,x:.08+Math.random()*.84,y:-.05};game.append(el);enemies.push(e);pos(el,e.x,e.y);beep(170,.1,'sawtooth')}
+function spawnHeart(){const el=document.createElement('div');el.className='actor heart';el.textContent='💚';const h={el,x:.12+Math.random()*.76,y:.08+Math.random()*.45};game.append(el);hearts.push(h);pos(el,h.x,h.y);beep(600,.09,'sine')}
+function dist(a,b,c,d){return Math.hypot(a-c,b-d)}
+function explode(x,y){const e=document.createElement('div');e.className='boom';e.textContent='💥';pos(e,x,y);game.append(e);setTimeout(()=>e.remove(),450)}
+function attack(){if(!running)return;player.classList.remove('attack');void player.offsetWidth;player.classList.add('attack');beep(420,.08,'square');setTimeout(()=>player.classList.remove('attack'),220);for(let i=enemies.length-1;i>=0;i--){let e=enemies[i];if(dist(px,py,e.x,e.y)<.13){explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(700,.08,'square')}}}
+document.querySelector('#attack').onpointerdown=e=>{e.preventDefault();attack()};
+addEventListener('keydown',e=>{const m={ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right'};if(m[e.key])keys[m[e.key]]=1;if(e.key===' '||e.key==='k')attack()});
+addEventListener('keyup',e=>{const m={ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right'};if(m[e.key])keys[m[e.key]]=0});
+function loop(now){if(!running)return;let dt=Math.min((now-last)/1000,.05);last=now;
+ let dx=keys.right-keys.left,dy=keys.down-keys.up;if(dx||dy){let l=Math.hypot(dx,dy);px+=dx/l*SPEED*dt;py+=dy/l*SPEED*dt}
+ px=Math.max(.05,Math.min(.95,px));py=Math.max(.12,Math.min(.87,py));pos(player,px,py);
+ enemyTimer+=dt;if(enemyTimer>=5){enemyTimer-=5;spawnEnemy()} healTimer-=dt;if(healTimer<=0){spawnHeart();healTimer=20+Math.random()*10}
+ for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];e.y+=ENEMY_SPEED*dt;pos(e.el,e.x,e.y);if(dist(px,py,e.x,e.y)<.065){hp=Math.max(0,hp-10);hpEl.textContent=hp;explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(80,.2,'sawtooth');if(!hp){running=false;document.querySelector('#gameover').style.display='grid'}continue}if(e.y>1.08){e.el.remove();enemies.splice(i,1)}}
+ for(let i=hearts.length-1;i>=0;i--){const h=hearts[i];if(dist(px,py,h.x,h.y)<.065){hp=Math.min(100,hp+5);hpEl.textContent=hp;h.el.remove();hearts.splice(i,1);beep(850,.12,'sine')}}
+ requestAnimationFrame(loop)}
+pos(player,px,py);requestAnimationFrame(loop);
 </script></body></html>
