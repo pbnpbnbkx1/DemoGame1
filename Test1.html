@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test1 - Running Dinosaur</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,sans-serif}
+body{background:linear-gradient(#8ed8ff 0 68%,#dff4a5 68% 78%,#8bc34a 78%)}
+.sun{position:absolute;right:9vw;top:8vh;width:72px;height:72px;border-radius:50%;background:#ffd54f;box-shadow:0 0 35px #ffe082}
+.cloud{position:absolute;width:90px;height:28px;background:#fff;border-radius:30px;opacity:.85;animation:cloud 14s linear infinite}
+.cloud:before,.cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud:before{width:38px;height:38px;left:14px;top:-18px}.cloud:after{width:50px;height:50px;right:10px;top:-26px}
+.c1{top:15%;left:-100px}.c2{top:28%;left:-100px;animation-delay:-7s;transform:scale(.7)}
+@keyframes cloud{to{left:110vw}}
+.ground{position:absolute;left:0;right:0;bottom:0;height:22%;background:#7a4f2b;border-top:8px solid #4e8d2c}
+.track{position:absolute;left:0;right:0;bottom:22%;height:8px;background:#4e8d2c}
+.runner{position:absolute;bottom:calc(22% + 7px);left:-140px;width:130px;height:100px;animation:runAcross 7s linear infinite}
+@keyframes runAcross{0%{left:-140px}100%{left:105vw}}
+.dino{position:relative;width:120px;height:92px;animation:bob .22s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-5px)}}
+.body{position:absolute;left:30px;top:35px;width:68px;height:42px;background:#3f8f46;border-radius:45% 55% 35% 45%}
+.head{position:absolute;left:76px;top:10px;width:48px;height:42px;background:#49a552;border-radius:45% 55% 25% 35%}
+.snout{position:absolute;left:105px;top:28px;width:28px;height:19px;background:#49a552;border-radius:0 10px 10px 7px}
+.eye{position:absolute;left:105px;top:19px;width:6px;height:6px;background:#111;border-radius:50%}
+.tail{position:absolute;left:3px;top:43px;width:52px;height:22px;background:#3f8f46;clip-path:polygon(0 45%,100% 0,100% 100%)}
+.leg{position:absolute;top:68px;width:14px;height:28px;background:#357c3d;transform-origin:top center}
+.l1{left:49px;animation:leg1 .22s linear infinite alternate}.l2{left:82px;animation:leg2 .22s linear infinite alternate}
+@keyframes leg1{from{transform:rotate(28deg)}to{transform:rotate(-28deg)}}@keyframes leg2{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
+.arm{position:absolute;left:88px;top:49px;width:27px;height:7px;background:#357c3d;transform:rotate(18deg);border-radius:5px}
+.shadow{position:absolute;left:30px;bottom:-3px;width:78px;height:12px;border-radius:50%;background:#0003;animation:shadow .22s ease-in-out infinite alternate}
+@keyframes shadow{to{transform:scaleX(.8);opacity:.45}}
+.title{position:absolute;top:4vh;left:0;right:0;text-align:center;color:#17452b;text-shadow:0 1px #fff8}
+.hint{position:absolute;bottom:4vh;left:0;right:0;text-align:center;color:#fff;background:#0004;padding:8px}
+</style>
+</head>
+<body>
+<div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div>
+<h1 class="title">HTML5 Dinosaur Run</h1>
+<div class="track"></div><div class="ground"></div>
+<div class="runner"><div class="shadow"></div><div class="dino">
+<div class="tail"></div><div class="body"></div><div class="head"></div><div class="snout"></div><div class="eye"></div>
+<div class="arm"></div><div class="leg l1"></div><div class="leg l2"></div>
+</div></div>
+<div class="hint">純 HTML + CSS Animation · GitHub Pages</div>
+</body>
+</html>
