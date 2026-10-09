@@ -1,43 +1,26 @@
 <!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Game1 - HTML5 Test</title>
-<style>
-html,body{margin:0;height:100%;background:#111;color:#fff;font-family:system-ui,sans-serif}
-main{height:100%;display:grid;place-items:center;text-align:center}
-canvas{background:#20242a;border:1px solid #555;max-width:92vw;touch-action:none}
-p{color:#bbb}
-</style>
-</head>
-<body>
-<main><div>
-<h1>HTML5 Game1</h1>
-<canvas id="game" width="640" height="360"></canvas>
-<p>方向鍵 / WASD 移動方塊；手機可在畫布上拖曳。</p>
-</div></main>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Game1 Prototype</title><style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#17212b;font-family:system-ui;color:white}
+#game{position:relative;width:100%;height:100%;touch-action:none;background:linear-gradient(#78c8e8 0 68%,#74a94b 68% 76%,#7a4e2d 76%)}
+#hero{position:absolute;left:40px;bottom:24%;width:82px;height:108px;user-select:none;touch-action:none;transform-origin:50% 85%}
+.head{position:absolute;left:23px;top:3px;width:42px;height:40px;border-radius:45%;background:#d7a16f;border:5px solid #562f25}
+.body{position:absolute;left:18px;top:42px;width:52px;height:50px;border-radius:12px;background:#9d2d2d;border:5px solid #e0ad45}
+.leg{position:absolute;top:87px;width:15px;height:20px;background:#432a25}.l{left:23px}.r{left:52px}
+.sword{position:absolute;left:66px;top:48px;width:55px;height:8px;background:#ddd;border-radius:4px;transform-origin:0 50%;transform:rotate(-18deg)}
+#hero.walking{animation:bob .16s infinite alternate} @keyframes bob{to{transform:translateY(-5px)}}
+#hero.attack .sword{animation:slash .32s ease-out} @keyframes slash{0%{transform:rotate(-65deg)}50%{transform:rotate(45deg)}100%{transform:rotate(-18deg)}}
+#hero.attack{animation:thrust .32s ease-out}@keyframes thrust{50%{transform:translateX(14px)}}
+#status{position:absolute;top:12px;left:12px;padding:8px 12px;background:#0008;border-radius:10px;font-size:14px}
+#help{position:absolute;left:12px;right:12px;bottom:12px;text-align:center;padding:10px;background:#0008;border-radius:12px;font-size:14px}
+</style></head><body><div id="game"><div id="status">狀態：待機</div>
+<div id="hero"><div class="head"></div><div class="body"></div><div class="leg l"></div><div class="leg r"></div><div class="sword"></div></div>
+<div id="help">拖曳角色＝移動　｜　點一下角色＝攻擊</div></div>
 <script>
-const c=document.getElementById('game'),ctx=c.getContext('2d');
-const p={x:300,y:160,s:32,v:4}, keys=new Set();
-addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));
-addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-function move(x,y){p.x=Math.max(0,Math.min(c.width-p.s,x));p.y=Math.max(0,Math.min(c.height-p.s,y))}
-function pointer(e){const r=c.getBoundingClientRect();move((e.clientX-r.left)*c.width/r.width-p.s/2,(e.clientY-r.top)*c.height/r.height-p.s/2)}
-c.addEventListener('pointerdown',e=>{c.setPointerCapture(e.pointerId);pointer(e)});
-c.addEventListener('pointermove',e=>{if(e.buttons)pointer(e)});
-function loop(){
- if(keys.has('arrowleft')||keys.has('a'))p.x-=p.v;
- if(keys.has('arrowright')||keys.has('d'))p.x+=p.v;
- if(keys.has('arrowup')||keys.has('w'))p.y-=p.v;
- if(keys.has('arrowdown')||keys.has('s'))p.y+=p.v;
- move(p.x,p.y);
- ctx.clearRect(0,0,c.width,c.height);
- ctx.fillStyle='#45d483';ctx.fillRect(p.x,p.y,p.s,p.s);
- ctx.fillStyle='#fff';ctx.font='20px system-ui';ctx.fillText('HTML5 Canvas is running ✓',18,30);
- requestAnimationFrame(loop);
-}
-loop();
-</script>
-</body>
-</html>
+const game=document.querySelector('#game'),hero=document.querySelector('#hero'),status=document.querySelector('#status');
+let down=false,moved=false,startX=0,startY=0,offsetX=0,offsetY=0;
+hero.addEventListener('pointerdown',e=>{down=true;moved=false;startX=e.clientX;startY=e.clientY;const r=hero.getBoundingClientRect();offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;hero.setPointerCapture(e.pointerId)});
+hero.addEventListener('pointermove',e=>{if(!down)return;if(Math.hypot(e.clientX-startX,e.clientY-startY)>8)moved=true;if(!moved)return;const g=game.getBoundingClientRect(),w=hero.offsetWidth,h=hero.offsetHeight;let x=e.clientX-g.left-offsetX,y=e.clientY-g.top-offsetY;x=Math.max(0,Math.min(g.width-w,x));y=Math.max(0,Math.min(g.height-h,y));hero.style.left=x+'px';hero.style.top=y+'px';hero.style.bottom='auto';hero.classList.add('walking');status.textContent='狀態：移動'});
+hero.addEventListener('pointerup',()=>{down=false;hero.classList.remove('walking');if(!moved){hero.classList.remove('attack');void hero.offsetWidth;hero.classList.add('attack');status.textContent='狀態：攻擊';setTimeout(()=>{hero.classList.remove('attack');status.textContent='狀態：待機'},350)}else status.textContent='狀態：待機'});
+hero.addEventListener('pointercancel',()=>{down=false;hero.classList.remove('walking')});
+</script></body></html>
