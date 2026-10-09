@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game1 - HTML5 Test</title>
+<style>
+html,body{margin:0;height:100%;background:#111;color:#fff;font-family:system-ui,sans-serif}
+main{height:100%;display:grid;place-items:center;text-align:center}
+canvas{background:#20242a;border:1px solid #555;max-width:92vw;touch-action:none}
+p{color:#bbb}
+</style>
+</head>
+<body>
+<main><div>
+<h1>HTML5 Game1</h1>
+<canvas id="game" width="640" height="360"></canvas>
+<p>方向鍵 / WASD 移動方塊；手機可在畫布上拖曳。</p>
+</div></main>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+const p={x:300,y:160,s:32,v:4}, keys=new Set();
+addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));
+addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+function move(x,y){p.x=Math.max(0,Math.min(c.width-p.s,x));p.y=Math.max(0,Math.min(c.height-p.s,y))}
+function pointer(e){const r=c.getBoundingClientRect();move((e.clientX-r.left)*c.width/r.width-p.s/2,(e.clientY-r.top)*c.height/r.height-p.s/2)}
+c.addEventListener('pointerdown',e=>{c.setPointerCapture(e.pointerId);pointer(e)});
+c.addEventListener('pointermove',e=>{if(e.buttons)pointer(e)});
+function loop(){
+ if(keys.has('arrowleft')||keys.has('a'))p.x-=p.v;
+ if(keys.has('arrowright')||keys.has('d'))p.x+=p.v;
+ if(keys.has('arrowup')||keys.has('w'))p.y-=p.v;
+ if(keys.has('arrowdown')||keys.has('s'))p.y+=p.v;
+ move(p.x,p.y);
+ ctx.clearRect(0,0,c.width,c.height);
+ ctx.fillStyle='#45d483';ctx.fillRect(p.x,p.y,p.s,p.s);
+ ctx.fillStyle='#fff';ctx.font='20px system-ui';ctx.fillText('HTML5 Canvas is running ✓',18,30);
+ requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
