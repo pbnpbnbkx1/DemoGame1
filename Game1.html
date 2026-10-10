@@ -6,7 +6,7 @@
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;color:#fff;font-family:system-ui;touch-action:none}
 #game{position:relative;width:100vw;height:100dvh;overflow:hidden;background:linear-gradient(#23354a,#426b70 58%,#405d38 58%,#263d2b);user-select:none}
 #hud{position:absolute;z-index:20;top:max(10px,env(safe-area-inset-top));left:12px;background:#0009;padding:7px 12px;border-radius:9px;font-weight:700}
-#msg{position:absolute;z-index:20;top:12px;left:50%;transform:translateX(-50%);font-size:13px;color:#ddd;transition:opacity .4s}#timer{position:absolute;z-index:20;top:max(10px,env(safe-area-inset-top));right:12px;background:#0009;padding:7px 12px;border-radius:9px;font-weight:700}
+#msg{position:absolute;z-index:20;top:12px;left:50%;transform:translateX(-50%);font-size:13px;color:#ddd;transition:opacity .4s}#timer{position:absolute;z-index:20;top:max(10px,env(safe-area-inset-top));right:12px;background:#0009;padding:7px 12px;border-radius:9px;font-weight:700}#attackRangePanel{position:absolute;z-index:31;top:max(52px,calc(env(safe-area-inset-top) + 52px));right:12px;background:#0009;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}#attackRange{width:110px;touch-action:auto}#attackRangeValue{display:inline-block;min-width:32px;text-align:right}
 .actor{position:absolute;width:42px;height:42px;border-radius:12px;transform:translate(-50%,-50%)}
 #player{z-index:8;left:50%;top:78%;background:#b72f35;border:4px solid #e8bd58;box-shadow:0 6px 0 #692127}
 #player:before{content:"";position:absolute;width:24px;height:19px;left:5px;top:-15px;border-radius:50% 50% 35% 35%;background:#d9a071;border:3px solid #542d27}
@@ -25,7 +25,7 @@
 #gameover{display:none;position:absolute;z-index:50;inset:0;background:#000b;place-items:center;text-align:center;font-size:28px}
 #gameover button{font-size:18px;padding:10px 20px}
 </style></head><body><div id="game">
-<div id="hud">HP：<span id="hp">100</span></div><div id="msg">Bomber 5秒 · Runner 15秒 · Boss 30秒</div><div id="timer">生存：<span id="timeLeft">180</span>s</div>
+<div id="hud">HP：<span id="hp">100</span></div><div id="msg">Bomber 5秒 · Runner 15秒 · Boss 30秒</div><div id="timer">生存：<span id="timeLeft">180</span>s</div><label id="attackRangePanel">Attack Range <input id="attackRange" type="range" min="0" max="100" step="5" value="35"><span id="attackRangeValue">35%</span></label>
 <div id="player" class="actor"><div id="weapon"></div></div>
 <div id="joystick" aria-label="移動搖桿"><div id="stick"></div></div>
 <div id="attackJoy" aria-label="攻擊搖桿"><div id="attackStick"></div></div>
@@ -35,7 +35,8 @@
 const game=document.querySelector('#game'),player=document.querySelector('#player'),hpEl=document.querySelector('#hp');
 let hp=100,px=.5,py=.78,last=performance.now(),enemyTimer=0,bossTimer=0,runnerTimer=0,healTimer=20+Math.random()*10,survival=180,running=true;
 const enemies=[],hearts=[]; const SPEED=.34, ENEMY_SPEED=.105, BOSS_SPEED=.075, RUNNER_SPEED=.25;
-let joyX=0,joyY=0,faceX=1,faceY=0,attacking=false,playerInvincible=0,playerStun=0;
+let joyX=0,joyY=0,faceX=1,faceY=0,attacking=false,playerInvincible=0,playerStun=0,attackTolerance=.35;
+const attackRange=document.querySelector('#attackRange'),attackRangeValue=document.querySelector('#attackRangeValue');attackRange.oninput=()=>{attackTolerance=Number(attackRange.value)/100;attackRangeValue.textContent=attackRange.value+'%'};
 function beep(freq=300,dur=.07,type='square'){try{const A=window.AudioContext||window.webkitAudioContext;window.ac??=new A();const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.05,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+dur)}catch{}}
 const joystick=document.querySelector('#joystick'),stick=document.querySelector('#stick');
 function setJoy(e){const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width*.32;let x=e.clientX-cx,y=e.clientY-cy,d=Math.hypot(x,y);if(d>max){x=x/d*max;y=y/d*max}joyX=x/max;joyY=y/max;stick.style.transform='translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px))';if(Math.hypot(joyX,joyY)>.15){faceX=joyX;faceY=joyY}}
@@ -54,7 +55,7 @@ function spawnHeart(){const el=document.createElement('div');el.className='actor
 function dist(a,b,c,d){return Math.hypot(a-c,b-d)}
 function explode(x,y){const e=document.createElement('div');e.className='boom';e.textContent='💥';pos(e,x,y);game.append(e);setTimeout(()=>e.remove(),450)}
 function attack(){if(!running||attacking)return;attacking=true;const weapon=document.querySelector('#weapon'),ang=Math.atan2(faceY,faceX);weapon.style.transform='translate(8px,-50%) rotate('+ang+'rad)';weapon.classList.remove('attack');void weapon.offsetWidth;weapon.classList.add('attack');beep(420,.08,'square');
- const reach=.18, baseHalfWidth=.018, tipTolerance=.35;const fl=Math.max(.001,Math.hypot(faceX,faceY)),ux=faceX/fl,uy=faceY/fl;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],vx=e.x-px,vy=e.y-py,along=vx*ux+vy*uy,side=Math.abs(vx*uy-vy*ux),progress=Math.max(0,Math.min(1,along/reach)),fanHalfWidth=baseHalfWidth*(1+tipTolerance*progress);if(along>=0&&along<=reach&&side<=fanHalfWidth){if(e.type==='littleBoss1'||e.type==='runner'){e.hp--;e.hpTag.textContent=(e.type==='runner'?'Runner':'Little Boss 1')+' · HP '+e.hp;e.x+=ux*.045;e.y+=uy*.045;beep(620,.07,'square');if(e.hp>0)continue}explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(700,.08,'square')}}
+ const reach=.18, baseHalfWidth=.018,hitHalfWidth=baseHalfWidth*(1+attackTolerance);const fl=Math.max(.001,Math.hypot(faceX,faceY)),ux=faceX/fl,uy=faceY/fl;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],vx=e.x-px,vy=e.y-py,along=vx*ux+vy*uy,side=Math.abs(vx*uy-vy*ux);if(along>=0&&along<=reach&&side<=hitHalfWidth){if(e.type==='littleBoss1'||e.type==='runner'){e.hp--;e.hpTag.textContent=(e.type==='runner'?'Runner':'Little Boss 1')+' · HP '+e.hp;e.x+=ux*.045;e.y+=uy*.045;beep(620,.07,'square');if(e.hp>0)continue}explode(e.x,e.y);e.el.remove();enemies.splice(i,1);beep(700,.08,'square')}}
  setTimeout(()=>{weapon.classList.remove('attack');attacking=false},260)}
 addEventListener('keydown',e=>{if(e.key===' '||e.key==='k')attack()});
 function loop(now){if(!running)return;let dt=Math.min((now-last)/1000,.05);last=now;
