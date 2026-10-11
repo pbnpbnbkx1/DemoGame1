@@ -116,17 +116,21 @@
         const totalCaptchaRounds = 3;
         let currentCaptchaItems = [];
 
-        const captchaItems = [
-            { icon: '🚦', correct: true },
-            { icon: '🚌', correct: false },
-            { icon: '🚗', correct: false },
-            { icon: '🚦', correct: true },
-            { icon: '🚲', correct: false },
-            { icon: '🏠', correct: false },
-            { icon: '🌳', correct: false },
-            { icon: '🚦', correct: true },
-            { icon: '🚕', correct: false }
-        ];
+        const distractorIcons = ['🚌', '🚗', '🚲', '🏠', '🌳', '🚕', '🚙', '🏍️'];
+
+        function createCaptchaItems() {
+            const trafficLightCount = Math.random() < 0.5 ? 3 : 4;
+            const items = Array.from(
+                { length: trafficLightCount },
+                () => ({ icon: '🚦', correct: true })
+            );
+
+            const distractors = shuffle(distractorIcons)
+                .slice(0, 9 - trafficLightCount)
+                .map(icon => ({ icon, correct: false }));
+
+            return [...items, ...distractors];
+        }
 
         function shuffle(items) {
             const result = [...items];
@@ -138,7 +142,7 @@
         }
 
         function showCaptcha() {
-            currentCaptchaItems = shuffle(captchaItems);
+            currentCaptchaItems = shuffle(createCaptchaItems());
             captchaGrid.innerHTML = '';
             document.querySelector('.captcha-title').textContent =
                 `第 ${captchaRound + 1} / ${totalCaptchaRounds} 次：請選出所有「交通號誌」`;
