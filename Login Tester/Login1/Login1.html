@@ -112,6 +112,9 @@
         const message = document.getElementById('message');
 
         let pendingUser = null;
+        let captchaRound = 0;
+        const totalCaptchaRounds = 3;
+        let currentCaptchaItems = [];
 
         const captchaItems = [
             { icon: '🚦', correct: true },
@@ -125,9 +128,22 @@
             { icon: '🚕', correct: false }
         ];
 
+        function shuffle(items) {
+            const result = [...items];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+
         function showCaptcha() {
+            currentCaptchaItems = shuffle(captchaItems);
             captchaGrid.innerHTML = '';
-            captchaItems.forEach((item, index) => {
+            document.querySelector('.captcha-title').textContent =
+                `第 ${captchaRound + 1} / ${totalCaptchaRounds} 次：請選出所有「交通號誌」`;
+
+            currentCaptchaItems.forEach((item, index) => {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 tile.textContent = item.icon;
@@ -161,7 +177,8 @@
                 }
 
                 pendingUser = user;
-                message.textContent = '帳密正確，請完成人機驗證';
+                captchaRound = 0;
+                message.textContent = '帳密正確，請完成 3 次人機驗證';
                 showCaptcha();
             } catch (error) {
                 console.error('Login1.json 載入失敗：', error);
@@ -176,7 +193,7 @@
                 .map((tile, index) => tile.classList.contains('selected') ? index : -1)
                 .filter(index => index >= 0);
 
-            const expected = captchaItems
+            const expected = currentCaptchaItems
                 .map((item, index) => item.correct ? index : -1)
                 .filter(index => index >= 0);
 
@@ -184,12 +201,21 @@
                 selected.length === expected.length &&
                 expected.every(index => selected.includes(index));
 
-            if (isCorrect) {
-                captchaPanel.style.display = 'none';
-                message.textContent = `登入成功，ID：${pendingUser.id}`;
-            } else {
-                message.textContent = 'CAPTCHA 驗證失敗，請重新選擇';
+            if (!isCorrect) {
+                message.textContent = `第 ${captchaRound + 1} 次 CAPTCHA 驗證失敗，請重新選擇`;
+                return;
             }
+
+            captchaRound++;
+
+            if (captchaRound >= totalCaptchaRounds) {
+                captchaPanel.style.display = 'none';
+                message.textContent = `3 次驗證完成，登入成功，ID：${pendingUser.id}`;
+                return;
+            }
+
+            message.textContent = `第 ${captchaRound} 次驗證成功，請繼續下一題`;
+            showCaptcha();
         });
     </script>
 </body>
