@@ -4,8 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 360px;
+            margin: 80px auto;
+            padding: 0 16px;
+        }
+
+        .field {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #message {
+            margin-top: 16px;
+        }
+    </style>
 </head>
 <body>
+    <h1>Login Test</h1>
 
+    <form id="loginForm">
+        <div class="field">
+            <label for="account">Account</label>
+            <input type="text" id="account" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="message"></div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const account = document.getElementById('account').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('./Login1.json');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const users = await response.json();
+                const user = users.find(item =>
+                    item.account === account && item.password === password
+                );
+
+                if (user) {
+                    message.textContent = `登入成功，ID：${user.id}`;
+                } else {
+                    message.textContent = '帳號或密碼錯誤';
+                }
+            } catch (error) {
+                console.error('Login1.json 載入失敗：', error);
+                message.textContent = '登入資料載入失敗';
+            }
+        });
+    </script>
 </body>
 </html>
