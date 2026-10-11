@@ -1,11 +1,113 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login2</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAPTCHA Playground</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Microsoft JhengHei",sans-serif;background:#f3f5f7;color:#222}
+main{max-width:980px;margin:30px auto;padding:0 16px}h1{margin-bottom:6px}.note{color:#666;margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.scene{height:190px;position:relative;overflow:hidden;border-radius:9px;background:linear-gradient(145deg,#b8ddff,#e9f5ff 55%,#b7dfaa 56%);border:1px solid #ccd}
+.scene:before{content:"☁️　　☀️";position:absolute;left:25px;top:25px;font-size:34px}.scene:after{content:"🏠　🌳　🚗";position:absolute;left:35px;bottom:25px;font-size:38px}
+.hole,.piece{width:46px;height:46px;position:absolute;border-radius:8px}.hole{border:3px dashed rgba(0,0,0,.5);background:rgba(255,255,255,.35)}
+.piece{display:grid;place-items:center;background:#1769e0;color:white;font-size:25px;font-weight:bold;z-index:2;touch-action:none;cursor:grab}
+.range{width:100%;margin-top:14px}.status{min-height:22px;margin:10px 0 0;font-weight:600}.ok{color:#14833b}.bad{color:#bd2c2c}
+button{border:0;border-radius:6px;background:#333;color:white;padding:8px 12px;cursor:pointer}
+.rotate-wrap{height:190px;display:grid;place-items:center;border:1px solid #ccd;border-radius:9px;background:#eef6ff}
+.rotate-target{width:125px;height:125px;border-radius:50%;border:3px dashed #888;display:grid;place-items:center;position:relative}
+.rotate-piece{width:105px;height:105px;border-radius:50%;display:grid;place-items:center;font-size:62px;background:#d9ecff;transition:transform .05s}
+.small{font-size:13px;color:#777}
+</style>
 </head>
 <body>
+<main>
+<h1>CAPTCHA Playground</h1>
+<p class="note">純前端測試：直線滑塊、旋轉拼圖、自由拖曳。每次重設都會重新 random。</p>
+<div class="grid">
+<section class="card">
+<h2>1. 直線滑塊</h2>
+<div class="scene" id="lineScene"><div class="hole" id="lineHole"></div><div class="piece" id="linePiece">◆</div></div>
+<input class="range" id="lineRange" type="range" min="0" max="100" value="0">
+<p class="status" id="lineStatus"></p><button id="lineReset">重新產生</button>
+</section>
 
+<section class="card">
+<h2>2. 圓形旋轉</h2>
+<div class="rotate-wrap"><div class="rotate-target"><div class="rotate-piece" id="rotatePiece">🧭</div></div></div>
+<input class="range" id="rotateRange" type="range" min="0" max="359" value="0">
+<p class="small">把圖案旋轉回正向（允許 ±8°）</p>
+<p class="status" id="rotateStatus"></p><button id="rotateReset">重新產生</button>
+</section>
+
+<section class="card">
+<h2>3. 自由拖曳</h2>
+<div class="scene" id="freeScene"><div class="hole" id="freeHole"></div><div class="piece" id="freePiece">◆</div></div>
+<p class="small">直接拖曳藍色拼圖片到缺口（X / Y 都需對齊）</p>
+<p class="status" id="freeStatus"></p><button id="freeReset">重新產生</button>
+</section>
+</div>
+</main>
+<script>
+const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const near=(a,b,t)=>Math.abs(a-b)<=t;
+
+const lineHole=document.getElementById('lineHole'),linePiece=document.getElementById('linePiece'),lineRange=document.getElementById('lineRange'),lineStatus=document.getElementById('lineStatus');
+let lineTarget=0;
+function resetLine(){
+ lineTarget=rand(90,230); lineHole.style.left=lineTarget+'px'; lineHole.style.top='72px';
+ linePiece.style.left='8px'; linePiece.style.top='72px'; lineRange.value=0; lineStatus.textContent='';
+}
+lineRange.addEventListener('input',()=>{
+ const max=document.getElementById('lineScene').clientWidth-54;
+ const x=(+lineRange.value/100)*max; linePiece.style.left=x+'px';
+ lineStatus.textContent=near(x,lineTarget,6)?'驗證成功':'';
+ lineStatus.className='status '+(lineStatus.textContent?'ok':'');
+});
+document.getElementById('lineReset').onclick=resetLine;
+
+const rotatePiece=document.getElementById('rotatePiece'),rotateRange=document.getElementById('rotateRange'),rotateStatus=document.getElementById('rotateStatus');
+let rotateOffset=0;
+function angleDistance(a,b){let d=Math.abs(a-b)%360;return Math.min(d,360-d)}
+function resetRotate(){
+ rotateOffset=rand(35,325); rotateRange.value=0; rotatePiece.style.transform='rotate('+rotateOffset+'deg)'; rotateStatus.textContent='';
+}
+rotateRange.addEventListener('input',()=>{
+ const total=(rotateOffset + +rotateRange.value)%360; rotatePiece.style.transform='rotate('+total+'deg)';
+ const ok=angleDistance(total,0)<=8; rotateStatus.textContent=ok?'驗證成功':'';
+ rotateStatus.className='status '+(ok?'ok':'');
+});
+document.getElementById('rotateReset').onclick=resetRotate;
+
+const freeScene=document.getElementById('freeScene'),freeHole=document.getElementById('freeHole'),freePiece=document.getElementById('freePiece'),freeStatus=document.getElementById('freeStatus');
+let freeTarget={x:0,y:0},dragging=false,offset={x:0,y:0};
+function resetFree(){
+ freeTarget={x:rand(100,230),y:rand(35,125)};
+ freeHole.style.left=freeTarget.x+'px';freeHole.style.top=freeTarget.y+'px';
+ freePiece.style.left='10px';freePiece.style.top='10px';freeStatus.textContent='';
+}
+freePiece.addEventListener('pointerdown',e=>{
+ dragging=true;freePiece.setPointerCapture(e.pointerId);
+ const r=freePiece.getBoundingClientRect();offset={x:e.clientX-r.left,y:e.clientY-r.top};
+});
+freePiece.addEventListener('pointermove',e=>{
+ if(!dragging)return;
+ const s=freeScene.getBoundingClientRect();
+ let x=e.clientX-s.left-offset.x,y=e.clientY-s.top-offset.y;
+ x=Math.max(0,Math.min(x,s.width-46));y=Math.max(0,Math.min(y,s.height-46));
+ freePiece.style.left=x+'px';freePiece.style.top=y+'px';
+});
+freePiece.addEventListener('pointerup',()=>{
+ dragging=false;
+ const x=parseFloat(freePiece.style.left),y=parseFloat(freePiece.style.top);
+ const ok=near(x,freeTarget.x,8)&&near(y,freeTarget.y,8);
+ freeStatus.textContent=ok?'驗證成功':'尚未對齊';
+ freeStatus.className='status '+(ok?'ok':'bad');
+});
+document.getElementById('freeReset').onclick=resetFree;
+
+resetLine();resetRotate();resetFree();
+</script>
 </body>
 </html>
