@@ -3,90 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login1</title>
+    <title>Login1 CAPTCHA Test</title>
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            max-width: 360px;
-            margin: 80px auto;
-            padding: 0 16px;
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: Arial, "Microsoft JhengHei", sans-serif;
+            background: #f4f6f8;
         }
-
-        .field {
-            margin-bottom: 12px;
+        .card {
+            width: min(92vw, 390px);
+            padding: 28px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.08);
         }
-
-        label {
-            display: block;
-            margin-bottom: 4px;
-        }
-
+        h1 { margin: 0 0 22px; font-size: 24px; }
+        .field { margin-bottom: 14px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; }
         input {
             width: 100%;
-            box-sizing: border-box;
-            padding: 8px;
+            padding: 10px 12px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            font-size: 16px;
         }
-
         button {
             width: 100%;
-            padding: 10px;
+            padding: 11px;
+            border: 0;
+            border-radius: 6px;
+            background: #1769e0;
+            color: #fff;
+            font-size: 16px;
             cursor: pointer;
         }
-
-        #message {
-            margin-top: 16px;
+        #message { min-height: 22px; margin-top: 14px; }
+        #captchaPanel { display: none; margin-top: 20px; }
+        .captcha-title { margin-bottom: 10px; font-weight: 700; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
         }
+        .tile {
+            aspect-ratio: 1;
+            position: relative;
+            display: grid;
+            place-items: center;
+            border: 3px solid transparent;
+            border-radius: 7px;
+            background: #e9edf2;
+            font-size: 38px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tile.selected {
+            border-color: #1769e0;
+            background: #dbe9ff;
+        }
+        .tile.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1769e0;
+        }
+        .hint { margin: 0 0 12px; color: #666; font-size: 13px; }
     </style>
 </head>
 <body>
-    <h1>Login Test</h1>
+    <main class="card">
+        <h1>Login Test</h1>
+        <form id="loginForm">
+            <div class="field">
+                <label for="account">Account</label>
+                <input type="text" id="account" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
 
-    <form id="loginForm">
-        <div class="field">
-            <label for="account">Account</label>
-            <input type="text" id="account" autocomplete="username" required>
-        </div>
+        <section id="captchaPanel">
+            <div class="captcha-title">請選出所有「交通號誌」</div>
+            <p class="hint">選取圖片後按「驗證」</p>
+            <div id="captchaGrid" class="grid"></div>
+            <button type="button" id="verifyCaptcha">驗證</button>
+        </section>
 
-        <div class="field">
-            <label for="password">Password</label>
-            <input type="password" id="password" autocomplete="current-password" required>
-        </div>
-
-        <button type="submit">Login</button>
-    </form>
-
-    <div id="message"></div>
+        <div id="message"></div>
+    </main>
 
     <script>
         const loginForm = document.getElementById('loginForm');
+        const captchaPanel = document.getElementById('captchaPanel');
+        const captchaGrid = document.getElementById('captchaGrid');
+        const verifyCaptcha = document.getElementById('verifyCaptcha');
         const message = document.getElementById('message');
+
+        let pendingUser = null;
+
+        const captchaItems = [
+            { icon: '🚦', correct: true },
+            { icon: '🚌', correct: false },
+            { icon: '🚗', correct: false },
+            { icon: '🚦', correct: true },
+            { icon: '🚲', correct: false },
+            { icon: '🏠', correct: false },
+            { icon: '🌳', correct: false },
+            { icon: '🚦', correct: true },
+            { icon: '🚕', correct: false }
+        ];
+
+        function showCaptcha() {
+            captchaGrid.innerHTML = '';
+            captchaItems.forEach((item, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.textContent = item.icon;
+                tile.dataset.index = index;
+                tile.addEventListener('click', () => tile.classList.toggle('selected'));
+                captchaGrid.appendChild(tile);
+            });
+            captchaPanel.style.display = 'block';
+        }
 
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault();
+            captchaPanel.style.display = 'none';
+            pendingUser = null;
 
             const account = document.getElementById('account').value.trim();
             const password = document.getElementById('password').value;
 
             try {
                 const response = await fetch('./Login1.json');
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const users = await response.json();
                 const user = users.find(item =>
                     item.account === account && item.password === password
                 );
 
-                if (user) {
-                    message.textContent = `登入成功，ID：${user.id}`;
-                } else {
+                if (!user) {
                     message.textContent = '帳號或密碼錯誤';
+                    return;
                 }
+
+                pendingUser = user;
+                message.textContent = '帳密正確，請完成人機驗證';
+                showCaptcha();
             } catch (error) {
                 console.error('Login1.json 載入失敗：', error);
                 message.textContent = '登入資料載入失敗';
+            }
+        });
+
+        verifyCaptcha.addEventListener('click', () => {
+            if (!pendingUser) return;
+
+            const selected = [...captchaGrid.querySelectorAll('.tile')]
+                .map((tile, index) => tile.classList.contains('selected') ? index : -1)
+                .filter(index => index >= 0);
+
+            const expected = captchaItems
+                .map((item, index) => item.correct ? index : -1)
+                .filter(index => index >= 0);
+
+            const isCorrect =
+                selected.length === expected.length &&
+                expected.every(index => selected.includes(index));
+
+            if (isCorrect) {
+                captchaPanel.style.display = 'none';
+                message.textContent = `登入成功，ID：${pendingUser.id}`;
+            } else {
+                message.textContent = 'CAPTCHA 驗證失敗，請重新選擇';
             }
         });
     </script>
