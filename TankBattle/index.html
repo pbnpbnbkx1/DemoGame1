@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tank Battle</title>
+<style>body{margin:0;background:#181818;color:white;font-family:system-ui;text-align:center}h1{font-size:1.4rem}canvas{display:block;margin:auto;width:min(95vw,520px);background:#101010;image-rendering:pixelated;touch-action:none}.controls{display:flex;justify-content:center;gap:20px;margin:14px}.pad{display:grid;grid-template-columns:repeat(3,54px);gap:4px}button{min-width:54px;min-height:48px;font-size:20px;touch-action:none}.fire{min-width:90px;background:#b64b35;color:white;border:0;border-radius:50%}</style></head>
+<body><h1>坦克大戰 Tank Battle</h1><p id="status">WASD / 方向鍵移動，Space 射擊</p><canvas id="game" width="416" height="416"></canvas>
+<div class="controls"><div class="pad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><button data-key="ArrowDown">▼</button><button data-key="ArrowRight">▶</button><span></span></div><button class="fire" data-key="Space">射擊</button></div><button id="restart">重新開始</button>
+<script>
+(()=>{'use strict';
+const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),status=document.querySelector('#status'),S=32,N=13;
+const baseMap=[
+'.............','..B..B.B..B..','..B..B.B..B..','..B..B.B..B..','.............','BB.BB...BB.BB','...S.....S...','BB.BB...BB.BB','.............','..B..B.B..B..','..B..B.B..B..','....BB.BB....','.....BEB.....'];
+let tiles,player,enemies,shots,keys,spawned,killed,spawnTimer,ended,last=0;
+const dirs=[[0,-1],[1,0],[0,1],[-1,0]];
+function reset(){tiles=baseMap.map(r=>r.split(''));player={x:6*S+4,y:11*S,dir:0,life:3,cool:0};enemies=[];shots=[];keys=new Set();spawned=0;killed=0;spawnTimer=0;ended=false;status.textContent='生命 3｜擊破 0 / 20';}
+function solid(x,y,w=24,h=24){if(x<0||y<0||x+w>416||y+h>416)return true;for(let j=Math.floor(y/S);j<=Math.floor((y+h-1)/S);j++)for(let i=Math.floor(x/S);i<=Math.floor((x+w-1)/S);i++)if('BSEW'.includes(tiles[j]?.[i]||'.'))return true;return false;}
+function move(t,dt,speed){const [dx,dy]=dirs[t.dir];let x=t.x+dx*speed*dt,y=t.y+dy*speed*dt;if(!solid(x,y)) {t.x=x;t.y=y;return true;}return false;}
+function fire(t,enemy){if(t.cool>0)return;t.cool=enemy?1.2:.32;let [dx,dy]=dirs[t.dir];shots.push({x:t.x+12+dx*17,y:t.y+12+dy*17,dx,dy,enemy});}
+function hit(a,b){return a.x<b.x+24&&a.x+24>b.x&&a.y<b.y+24&&a.y+24>b.y;}
+function update(dt){if(ended)return;player.cool=Math.max(0,player.cool-dt);const directions=[['ArrowUp','KeyW'],['ArrowRight','KeyD'],['ArrowDown','KeyS'],['ArrowLeft','KeyA']];for(let i=0;i<4;i++)if(directions[i].some(k=>keys.has(k))){player.dir=i;move(player,dt,105);break;}if(keys.has('Space'))fire(player,false);
+spawnTimer-=dt;if(spawned<20&&spawnTimer<=0&&enemies.length<4){let col=[0,6,12][spawned%3],e={x:col*S+4,y:4,dir:2,cool:1,turn:0};if(!enemies.some(t=>hit(t,e))&&!hit(player,e)){enemies.push(e);spawned++;spawnTimer=1.7;}}
+for(const e of enemies){e.cool=Math.max(0,e.cool-dt);e.turn-=dt;if(e.turn<=0){e.dir=Math.random()<.6?2:Math.floor(Math.random()*4);e.turn=.5+Math.random()*1.5;}if(!move(e,dt,48))e.turn=0;if(Math.random()<dt*.7)fire(e,true);}
+for(let k=shots.length-1;k>=0;k--){const b=shots[k];b.x+=b.dx*230*dt;b.y+=b.dy*230*dt;const i=Math.floor(b.x/S),j=Math.floor(b.y/S),tile=tiles[j]?.[i];let remove=b.x<0||b.y<0||b.x>=416||b.y>=416;if(tile==='B'){tiles[j][i]='.';remove=true;}if(tile==='S')remove=true;if(tile==='E'){remove=true;ended=true;status.textContent='基地被摧毀！遊戲結束';}
+if(!remove){if(b.enemy){if(b.x>=player.x&&b.x<=player.x+24&&b.y>=player.y&&b.y<=player.y+24){remove=true;player.life--;player.x=6*S+4;player.y=11*S;if(player.life<=0){ended=true;status.textContent='生命耗盡！遊戲結束';}}}else{for(let q=enemies.length-1;q>=0;q--){const e=enemies[q];if(b.x>=e.x&&b.x<=e.x+24&&b.y>=e.y&&b.y<=e.y+24){enemies.splice(q,1);killed++;remove=true;break;}}}}
+if(remove)shots.splice(k,1);}
+if(!ended){status.textContent='生命 '+player.life+'｜擊破 '+killed+' / 20';if(killed===20){ended=true;status.textContent='恭喜過關！';}}}
+function tank(t,color){ctx.save();ctx.translate(t.x+12,t.y+12);ctx.rotate(t.dir*Math.PI/2);ctx.fillStyle='#333';ctx.fillRect(-12,-12,6,24);ctx.fillRect(6,-12,6,24);ctx.fillStyle=color;ctx.fillRect(-8,-10,16,20);ctx.fillRect(-3,-17,6,14);ctx.fillStyle='#242424';ctx.fillRect(-4,-4,8,8);ctx.restore();}
+function draw(){ctx.fillStyle='#101010';ctx.fillRect(0,0,416,416);for(let j=0;j<N;j++)for(let i=0;i<N;i++){const t=tiles[j][i],x=i*S,y=j*S;if(t==='B'){ctx.fillStyle='#a64b32';ctx.fillRect(x+1,y+1,30,30);ctx.strokeStyle='#d5855b';ctx.strokeRect(x+1,y+1,30,14);ctx.strokeRect(x+1,y+16,30,15);}else if(t==='S'){ctx.fillStyle='#8c929a';ctx.fillRect(x+2,y+2,28,28);ctx.fillStyle='#c8ccd0';ctx.fillRect(x+5,y+5,22,5);}else if(t==='E'){ctx.fillStyle='#e8c35b';ctx.fillRect(x+5,y+5,22,22);ctx.fillStyle='#3b2810';ctx.fillRect(x+12,y+8,8,16);}}tank(player,'#e8c84b');enemies.forEach(e=>tank(e,'#d96352'));ctx.fillStyle='#fff6bb';shots.forEach(b=>ctx.fillRect(b.x-3,b.y-3,6,6));}
+function frame(now){const dt=Math.min((now-last)/1000||0,.05);last=now;update(dt);draw();requestAnimationFrame(frame);}
+document.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys.add(e.code);});document.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
+document.querySelectorAll('[data-key]').forEach(b=>{const key=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(key);});for(const evt of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(evt,()=>keys.delete(key));});
+document.querySelector('#restart').addEventListener('click',reset);reset();requestAnimationFrame(frame);
+})();
+</script></body></html>
